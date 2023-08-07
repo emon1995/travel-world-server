@@ -164,6 +164,16 @@ async function run() {
             }
         })
 
+        // get all comments route
+        app.get("/comments", async (req, res) => {
+            try {
+                const result = await commentCollection.find({}).toArray();
+                return res.send(result);
+            } catch (error) {
+                return res.send({ message: error.message });
+            }
+        })
+
         // post comment route create
         app.post("/comments", async (req, res) => {
             try {
