@@ -99,6 +99,18 @@ async function run() {
             }
         })
 
+        // get single group route
+        app.get("/group/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+                const query = { _id: new ObjectId(id) };
+                const result = await groupCollection.findOne(query);
+                return res.send(result);
+            } catch (error) {
+                return res.send({ message: error.message });
+            }
+        })
+
         // join groups route
         app.patch("/join-groups/:id", async (req, res) => {
             try {
