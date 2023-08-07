@@ -88,6 +88,34 @@ async function run() {
                 return res.send({ message: error.message });
             }
         })
+
+        // get groups route
+        app.get("/groups", async (req, res) => {
+            try {
+                const result = await groupCollection.find({}).toArray();
+                return res.send(result);
+            } catch (error) {
+                return res.send({ message: error.message });
+            }
+        })
+
+        // join groups route
+        app.patch("/join-groups/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+                const body = req.body;
+                const filter = { _id: new ObjectId(id) };
+                const updateDoc = {
+                    $set: {
+                        membersEmail: body
+                    }
+                }
+                const result = await groupCollection.updateOne(filter, updateDoc);
+                return res.send(result);
+            } catch (error) {
+                return res.send({ message: error.message });
+            }
+        })
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
