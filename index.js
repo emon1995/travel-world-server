@@ -254,7 +254,7 @@ async function run() {
             }
         })
 
-        app.delete("/manage-member/:id", async (req, res) => {
+        app.delete("/manage-member/:id", verifyJWT, verifyAdmin, async (req, res) => {
             try {
                 const id = req.params.id;
                 const { groupId } = req.query;
@@ -267,6 +267,36 @@ async function run() {
                 return res.send(member);
             } catch (error) {
                 return res.send({ message: error.message });
+            }
+        })
+
+        // posts all get route
+        app.get("/manage-posts", verifyJWT, verifyAdmin, async (req, res) => {
+            try {
+                const result = await postCollection.find({}).toArray();
+                return res.send(result);
+            } catch (error) {
+                return res.send({ message: error.message });
+            }
+        })
+
+        // admin can approved & denied patch route
+        app.patch("/manage-posts/:id", verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const query = req.query;
+            const filter = { _id: new ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    status: query?.status
+                }
+            }
+            // console.log(query, id);
+            if (query?.status === "approved") {
+                const result = await postCollection.updateOne(filter, updatedDoc);
+                return res.send(result);
+            } else if (query?.status === "denied") {
+                const result = await postCollection.updateOne(filter, updatedDoc);
+                return res.send(result);
             }
         })
     } finally {
