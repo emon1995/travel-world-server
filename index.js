@@ -37,6 +37,7 @@ async function run() {
         const userCollection = client.db("travelWorldDB").collection("users");
         const groupCollection = client.db("travelWorldDB").collection("groups");
         const postCollection = client.db("travelWorldDB").collection("posts");
+        const commentCollection = client.db("travelWorldDB").collection("comments");
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
@@ -130,11 +131,44 @@ async function run() {
             }
         })
 
-        // posts route post
+        // posts all get route
+        app.get("/posts", async (req, res) => {
+            try {
+                const result = await postCollection.find({}).toArray();
+                return res.send(result);
+            } catch (error) {
+                return res.send({ message: error.message });
+            }
+        })
+
+        // single get post route
+        app.get("/post/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+                const query = { _id: new ObjectId(id) };
+                const result = await postCollection.findOne(query);
+                return res.send(result);
+            } catch (error) {
+                return res.send({ message: error.message });
+            }
+        })
+
+        // posts create route post
         app.post("/posts", async (req, res) => {
             try {
                 const posts = req.body;
                 const result = await postCollection.insertOne(posts);
+                return res.send(result);
+            } catch (error) {
+                return res.send({ message: error.message });
+            }
+        })
+
+        // post comment route create
+        app.post("/comments", async (req, res) => {
+            try {
+                const body = req.body;
+                const result = await commentCollection.insertOne(body);
                 return res.send(result);
             } catch (error) {
                 return res.send({ message: error.message });
