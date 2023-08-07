@@ -282,21 +282,54 @@ async function run() {
 
         // admin can approved & denied patch route
         app.patch("/manage-posts/:id", verifyJWT, verifyAdmin, async (req, res) => {
-            const id = req.params.id;
-            const query = req.query;
-            const filter = { _id: new ObjectId(id) };
-            const updatedDoc = {
-                $set: {
-                    status: query?.status
+            try {
+                const id = req.params.id;
+                const query = req.query;
+                const filter = { _id: new ObjectId(id) };
+                const updatedDoc = {
+                    $set: {
+                        status: query?.status
+                    }
                 }
+                // console.log(query, id);
+                if (query?.status === "approved") {
+                    const result = await postCollection.updateOne(filter, updatedDoc);
+                    return res.send(result);
+                } else if (query?.status === "denied") {
+                    const result = await postCollection.updateOne(filter, updatedDoc);
+                    return res.send(result);
+                }
+            } catch (error) {
+                return res.send({ message: error.message });
             }
-            // console.log(query, id);
-            if (query?.status === "approved") {
-                const result = await postCollection.updateOne(filter, updatedDoc);
+        })
+
+        // admin edit route
+        app.patch("/manage-group/edit/:id", verifyJWT, verifyAdmin, async (req, res) => {
+            try {
+                const id = req.params.id;
+                const groupName = req.body;
+                // console.log(groupName);
+                const filter = { _id: new ObjectId(id) };
+                const updatedDoc = {
+                    $set: groupName
+                }
+                const result = await groupCollection.updateOne(filter, updatedDoc);
                 return res.send(result);
-            } else if (query?.status === "denied") {
-                const result = await postCollection.updateOne(filter, updatedDoc);
+            } catch (error) {
+                return res.send({ message: error.message });
+            }
+        })
+
+        // admin group delete route
+        app.delete("/manage-group/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+                const query = { _id: new ObjectId(id) };
+                const result = await groupCollection.deleteOne(query);
                 return res.send(result);
+            } catch (error) {
+                return res.send({ message: error.message });
             }
         })
     } finally {
