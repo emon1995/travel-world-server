@@ -36,6 +36,7 @@ async function run() {
         // await client.connect();
         const userCollection = client.db("travelWorldDB").collection("users");
         const groupCollection = client.db("travelWorldDB").collection("groups");
+        const postCollection = client.db("travelWorldDB").collection("posts");
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
@@ -123,6 +124,17 @@ async function run() {
                     }
                 }
                 const result = await groupCollection.updateOne(filter, updateDoc);
+                return res.send(result);
+            } catch (error) {
+                return res.send({ message: error.message });
+            }
+        })
+
+        // posts route post
+        app.post("/posts", async (req, res) => {
+            try {
+                const posts = req.body;
+                const result = await postCollection.insertOne(posts);
                 return res.send(result);
             } catch (error) {
                 return res.send({ message: error.message });
