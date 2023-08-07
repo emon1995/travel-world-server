@@ -30,6 +30,22 @@ const client = new MongoClient(uri, {
     }
 });
 
+// middleware verify token
+const verifyJWT = (req, res, next) => {
+    const authorization = req.headers.authorization;
+    if (!authorization) {
+        return res.status(401).send({ error: true, message: "unauthorized" });
+    }
+    const token = authorization.split(" ")[1];
+    jwt.verify(token, process.env.JWT_SECRET_KEY, (err, decoded) => {
+        if (err) {
+            return res.status(401).send({ error: true, message: "unauthorized" });
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
+
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
@@ -49,6 +65,46 @@ async function run() {
                 // console.log(user);
                 const token = jwt.sign(user, process.env.JWT_SECRET_KEY, { expiresIn: "10d" });
                 return res.send({ token });
+            } catch (error) {
+                return res.send({ message: error.message });
+            }
+        })
+
+        // verify admin
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            if (user?.admin !== true) {
+                return res.status(403).send({ error: true, message: "forbidden access" });
+            }
+            next();
+        }
+
+        // verify members
+        const verifyMembers = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            if (user?.role !== "member") {
+                return res.status(403).send({ error: true, message: "forbidden access" });
+            }
+            next();
+        }
+
+        // admin route role
+        app.get("/users/:email", async (req, res) => {
+            try {
+                const email = req.params.email;
+                const query = { email: email };
+                const user = await userCollection.findOne(query);
+                if (user?.role === "admin") {
+                    const result = { role: user?.role };
+                    return res.send(result);
+                } else if (user?.role === "member") {
+                    const result = { role: user?.role };
+                    return res.send(result);
+                }
             } catch (error) {
                 return res.send({ message: error.message });
             }
