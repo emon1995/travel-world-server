@@ -176,8 +176,8 @@ async function run() {
                 const body = req.body;
                 const filter = { _id: new ObjectId(id) };
                 const updateDoc = {
-                    $set: {
-                        membersEmail: body
+                    $push: {
+                        membersInfo: { ...body, _id: new ObjectId() }
                     }
                 }
                 const result = await groupCollection.updateOne(filter, updateDoc);
@@ -236,6 +236,35 @@ async function run() {
                 const body = req.body;
                 const result = await commentCollection.insertOne(body);
                 return res.send(result);
+            } catch (error) {
+                return res.send({ message: error.message });
+            }
+        })
+
+        // manage member route
+        app.get("/manage-member", verifyJWT, verifyAdmin, async (req, res) => {
+            try {
+                const members = await groupCollection.find({}).toArray();
+                // const query = { email: members.map(member => member?.membersEmail?.memberEmail) }
+                // console.log(query, members);
+                // const result = await userCollection.find(query).toArray();
+                return res.send(members);
+            } catch (error) {
+                return res.send({ message: error.message });
+            }
+        })
+
+        app.delete("/manage-member/:id", async (req, res) => {
+            try {
+                const id = req.params.id;
+                const { groupId } = req.query;
+                const filter = { _id: new ObjectId(id) };
+                const updateDoc = {
+                    _id: new ObjectId(groupId)
+                }
+                const member = await groupCollection.updateOne(filter, { $pull: { membersInfo: updateDoc } });
+
+                return res.send(member);
             } catch (error) {
                 return res.send({ message: error.message });
             }
