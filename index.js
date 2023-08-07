@@ -35,27 +35,58 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         // await client.connect();
         const userCollection = client.db("travelWorldDB").collection("users");
+        const groupCollection = client.db("travelWorldDB").collection("groups");
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
         // jwt token
         app.post("/jwt", (req, res) => {
-            const user = req.body;
-            const token = jwt.sign(user, process.env.JWT_SECRET_KEY, { expiresIn: "10d" });
-            return res.send({ token });
+            try {
+                const user = req.body;
+                // console.log(user);
+                const token = jwt.sign(user, process.env.JWT_SECRET_KEY, { expiresIn: "10d" });
+                return res.send({ token });
+            } catch (error) {
+                return res.send({ message: error.message });
+            }
         })
 
         // user port route
         app.post("/users", async (req, res) => {
-            const user = req.body;
-            const query = { email: user.email };
-            const existingUser = await userCollection.findOne(query);
-            if (existingUser) {
-                return res.send({ message: "user already exist" });
+            try {
+                const user = req.body;
+                const query = { email: user.email };
+                const existingUser = await userCollection.findOne(query);
+                if (existingUser) {
+                    return res.send({ message: "user already exist" });
+                }
+                const result = await userCollection.insertOne(user);
+                res.send(result);
+            } catch (error) {
+                return res.send({ message: error.message });
             }
-            const result = await userCollection.insertOne(user);
-            res.send(result);
+        })
+
+        // create group route
+        app.post("/groups/:email", async (req, res) => {
+            try {
+                const groupName = req.body;
+                const email = req.params.email;
+
+                const filter = { email: email };
+                const updateDoc = {
+                    $set: {
+                        role: "admin",
+                        admin: true
+                    }
+                }
+                const updateUser = await userCollection.updateOne(filter, updateDoc);
+                const result = await groupCollection.insertOne(groupName);
+                return res.send(result);
+            } catch (error) {
+                return res.send({ message: error.message });
+            }
         })
     } finally {
         // Ensures that the client will close when you finish/error
