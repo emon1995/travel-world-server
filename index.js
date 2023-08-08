@@ -190,7 +190,13 @@ async function run() {
         // posts all get route
         app.get("/posts", async (req, res) => {
             try {
-                const result = await postCollection.find({}).toArray();
+                const query = { status: "approved" };
+                const options = {
+                    sort: {
+                        date: -1
+                    }
+                }
+                const result = await postCollection.find(query, options).toArray();
                 return res.send(result);
             } catch (error) {
                 return res.send({ message: error.message });
@@ -254,6 +260,7 @@ async function run() {
             }
         })
 
+        // manage member delete route
         app.delete("/manage-member/:id", verifyJWT, verifyAdmin, async (req, res) => {
             try {
                 const id = req.params.id;
@@ -322,11 +329,54 @@ async function run() {
         })
 
         // admin group delete route
-        app.delete("/manage-group/:id", async (req, res) => {
+        app.delete("/manage-group/:id", verifyJWT, verifyAdmin, async (req, res) => {
             try {
                 const id = req.params.id;
                 const query = { _id: new ObjectId(id) };
                 const result = await groupCollection.deleteOne(query);
+                return res.send(result);
+            } catch (error) {
+                return res.send({ message: error.message });
+            }
+        })
+
+        // manage group member route
+        app.delete("/my-group/:id", verifyJWT, verifyMembers, async (req, res) => {
+            try {
+                const id = req.params.id;
+                const { groupId } = req.query;
+                const filter = { _id: new ObjectId(id) };
+                const updateDoc = {
+                    _id: new ObjectId(groupId)
+                }
+                const member = await groupCollection.updateOne(filter, { $pull: { membersInfo: updateDoc } });
+
+                return res.send(member);
+            } catch (error) {
+                return res.send({ message: error.message });
+            }
+        })
+
+        // posts all get route member
+        app.get("/my-posts/:email", verifyJWT, verifyMembers, async (req, res) => {
+            try {
+                const email = req.params.email;
+                const query = { postUserEmail: email };
+                const result = await postCollection.find(query).toArray();
+                return res.send(result);
+            } catch (error) {
+                return res.send({ message: error.message });
+            }
+        })
+
+        // groups all get route member
+        app.get("/my-group/:email", verifyJWT, verifyMembers, async (req, res) => {
+            try {
+                const email = req.params.email;
+                // console.log(email);
+                const value = { email: email };
+                const result = await groupCollection.find({ membersInfo: { $elemMatch: value } }).toArray();
+                // console.log(result);
                 return res.send(result);
             } catch (error) {
                 return res.send({ message: error.message });
